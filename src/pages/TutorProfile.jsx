@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPinIcon, PhoneIcon, EnvelopeIcon, AcademicCapIcon, StarIcon } from '@heroicons/react/24/outline';
+import { MapPinIcon, PhoneIcon, EnvelopeIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
 import Loader from '../components/common/Loader';
 import { useAuth } from '../context/AuthContext';
@@ -15,11 +15,7 @@ const TutorProfile = () => {
   const [showPhone, setShowPhone] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  useEffect(() => {
-    fetchTutor();
-  }, [id]);
-
-  const fetchTutor = async () => {
+  const fetchTutor = useCallback(async () => {
     try {
       const { data } = await api.get(`/public/tutors/${id}`);
       setTutor(data);
@@ -28,7 +24,11 @@ const TutorProfile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchTutor();
+  }, [fetchTutor]);
 
   const handleRevealContact = async () => {
     if (!user) {

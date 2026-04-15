@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MagnifyingGlassIcon, MapPinIcon, AcademicCapIcon } from '@heroicons/react/24/outline';
 import api from '../services/api';
@@ -15,21 +15,16 @@ const Home = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  useEffect(() => {
-    fetchSubjects();
-    fetchTutors();
-  }, [page, searchTerm, location, subject]);
-
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
       const { data } = await api.get('/public/subjects');
       setSubjects(data);
     } catch (error) {
       console.error('Failed to fetch subjects');
     }
-  };
+  }, []);
 
-  const fetchTutors = async () => {
+  const fetchTutors = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, size: 9 };
@@ -44,7 +39,12 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, searchTerm, location, subject]);
+
+  useEffect(() => {
+    fetchSubjects();
+    fetchTutors();
+  }, [fetchSubjects, fetchTutors]);
 
   const handleSearch = (e) => {
     e.preventDefault();
