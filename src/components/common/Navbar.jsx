@@ -16,6 +16,7 @@ const Navbar = () => {
   const getDashboardLink = () => {
     if (user?.role === 'TUTOR') return '/dashboard/tutor';
     if (user?.role === 'ADMIN') return '/dashboard/admin';
+    if (user?.role === 'PARENT') return '/dashboard/parent';
     return '/';
   };
 
@@ -66,7 +67,7 @@ const Navbar = () => {
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              to="/admin/approvals"
+                              to="/dashboard/admin"
                               className={`${active ? 'bg-gray-100' : ''} flex items-center px-4 py-2 text-sm text-gray-700`}
                             >
                               <ShieldCheckIcon className="h-4 w-4 mr-2" />

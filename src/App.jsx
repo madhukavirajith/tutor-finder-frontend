@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import TutorProfile from './pages/TutorProfile';
 import TutorDashboard from './pages/Dashboard/TutorDashboard';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
+import ParentDashboard from './pages/Dashboard/ParentDashboard';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -35,6 +36,11 @@ function App() {
                 <Route path="admin" element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="parent" element={
+                  <ProtectedRoute allowedRoles={['PARENT']}>
+                    <ParentDashboard />
                   </ProtectedRoute>
                 } />
               </Route>

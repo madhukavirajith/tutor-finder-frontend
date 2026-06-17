@@ -1,8 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import api from '../services/api';
+import { login as apiLogin, register as apiRegister } from '../services/auth';
 import toast from 'react-hot-toast';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const { data } = await api.post('/auth/signin', { email, password });
+      const { data } = await apiLogin(email, password);
       localStorage.setItem('token', data.token);
       const userData = { id: data.id, email: data.email, role: data.role };
       localStorage.setItem('user', JSON.stringify(userData));
@@ -33,9 +33,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (email, password, role) => {
+  /**
+   * Register a new user.
+   * @param {Object} registrationData - Full registration payload.
+   *   For PARENT: { email, password, role }
+   *   For TUTOR:  { email, password, role, title, firstName, lastName, gender, dateOfBirth, phoneNumber, address }
+   */
+  const register = async (registrationData) => {
     try {
-      await api.post('/auth/signup', { email, password, role });
+      await apiRegister(registrationData);
       toast.success('Registration successful! Please login.');
     } catch (error) {
       throw error;

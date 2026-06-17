@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:8080/api', // Connect to our Java Backend!
+  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8081/api', // Connect to our Java Backend!
   headers: {
     'Content-Type': 'application/json',
   },
