@@ -10,7 +10,6 @@ import {
   AcademicCapIcon,
   UserIcon,
   CheckCircleIcon,
-  PhoneIcon,
   MapPinIcon,
   IdentificationIcon,
   CalendarIcon,
@@ -83,8 +82,6 @@ const Register = () => {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors },
     reset,
   } = useForm({
