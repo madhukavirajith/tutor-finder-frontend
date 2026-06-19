@@ -96,6 +96,27 @@ const TutorDashboard = () => {
     }
   };
 
+  const handleFileChange = (e, fieldName) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+      toast.error('Image size must be less than 2MB');
+      e.target.value = ''; // Reset input
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfile(prev => ({
+        ...prev,
+        [fieldName]: reader.result
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -222,17 +243,16 @@ const TutorDashboard = () => {
               />
             </div>
 
-            {/* Profile Image URL */}
+            {/* Profile Image File Upload */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
-                <PhotoIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Profile Picture URL
+                <PhotoIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Profile Picture File
               </label>
               <input
-                type="url"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50/50"
-                value={profile.profileImageUrl}
-                onChange={(e) => setProfile(prev => ({ ...prev, profileImageUrl: e.target.value }))}
-                placeholder="e.g. https://imgur.com/your-photo.jpg"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
+                onChange={(e) => handleFileChange(e, 'profileImageUrl')}
               />
               {profile.profileImageUrl && (
                 <div className="mt-2 flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
@@ -247,17 +267,16 @@ const TutorDashboard = () => {
               )}
             </div>
 
-            {/* Banner/Leaflet Image URL */}
+            {/* Banner/Leaflet Image File Upload */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
-                <PhotoIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Leaflet / Flyer Banner URL
+                <PhotoIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Leaflet / Flyer Banner File
               </label>
               <input
-                type="url"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50/50"
-                value={profile.bannerImageUrl}
-                onChange={(e) => setProfile(prev => ({ ...prev, bannerImageUrl: e.target.value }))}
-                placeholder="e.g. https://imgur.com/your-flyer.jpg"
+                type="file"
+                accept="image/*"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50/50 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
+                onChange={(e) => handleFileChange(e, 'bannerImageUrl')}
               />
               {profile.bannerImageUrl && (
                 <div className="mt-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
