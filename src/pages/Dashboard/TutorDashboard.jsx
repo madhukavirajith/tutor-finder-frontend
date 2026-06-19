@@ -9,9 +9,10 @@ import {
   DocumentTextIcon, 
   CheckCircleIcon, 
   ExclamationTriangleIcon, 
-  XCircleIcon 
+  XCircleIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
-import { getSubjects, getOwnProfile, updateOwnProfile } from '../../services/tutors';
+import { getSubjects, getOwnProfile, updateOwnProfile, createSubject } from '../../services/tutors';
 import Loader from '../../components/common/Loader';
 
 const TutorDashboard = () => {
@@ -20,13 +21,18 @@ const TutorDashboard = () => {
     phoneNumber: '',
     location: '',
     bio: '',
-    subjects: []
+    subjects: [],
+    profileImageUrl: '',
+    bannerImageUrl: ''
   });
   const [subjectsList, setSubjectsList] = useState([]);
   const [selectedSubjectIds, setSelectedSubjectIds] = useState([]);
   const [status, setStatus] = useState('PENDING');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  const [customSubject, setCustomSubject] = useState('');
+  const [addingSubject, setAddingSubject] = useState(false);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -44,7 +50,9 @@ const TutorDashboard = () => {
           phoneNumber: data.phoneNumber || '',
           location: data.location || '',
           bio: data.bio || '',
-          subjects: data.subjects || []
+          subjects: data.subjects || [],
+          profileImageUrl: data.profileImageUrl || '',
+          bannerImageUrl: data.bannerImageUrl || ''
         });
         setStatus(data.approvalStatus || 'PENDING');
         setSelectedSubjectIds((data.subjects || []).map(sub => sub.id));
@@ -65,6 +73,29 @@ const TutorDashboard = () => {
     );
   };
 
+  const handleAddCustomSubject = async (e) => {
+    e.preventDefault();
+    if (!customSubject.trim()) return;
+    setAddingSubject(true);
+    try {
+      const res = await createSubject(customSubject.trim());
+      const newSub = res.data;
+      setSubjectsList(prev => {
+        if (prev.some(s => s.id === newSub.id)) return prev;
+        return [...prev, newSub];
+      });
+      setSelectedSubjectIds(prev => 
+        prev.includes(newSub.id) ? prev : [...prev, newSub.id]
+      );
+      setCustomSubject('');
+      toast.success(`Subject "${newSub.name}" added successfully!`);
+    } catch (err) {
+      toast.error('Failed to add custom subject');
+    } finally {
+      setAddingSubject(false);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -74,7 +105,9 @@ const TutorDashboard = () => {
         phoneNumber: profile.phoneNumber,
         location: profile.location,
         bio: profile.bio,
-        subjectIds: selectedSubjectIds
+        subjectIds: selectedSubjectIds,
+        profileImageUrl: profile.profileImageUrl,
+        bannerImageUrl: profile.bannerImageUrl
       });
       setStatus(data.approvalStatus);
       toast.success('Profile updated successfully! Awaiting admin review.');
@@ -189,6 +222,58 @@ const TutorDashboard = () => {
               />
             </div>
 
+            {/* Profile Image URL */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <PhotoIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Profile Picture URL
+              </label>
+              <input
+                type="url"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50/50"
+                value={profile.profileImageUrl}
+                onChange={(e) => setProfile(prev => ({ ...prev, profileImageUrl: e.target.value }))}
+                placeholder="e.g. https://imgur.com/your-photo.jpg"
+              />
+              {profile.profileImageUrl && (
+                <div className="mt-2 flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                  <img 
+                    src={profile.profileImageUrl} 
+                    alt="Preview" 
+                    className="w-12 h-12 object-cover rounded-full border border-gray-300" 
+                    onError={(e) => { e.target.src = 'https://placehold.co/100x100?text=No+Image'; }} 
+                  />
+                  <span className="text-xs text-gray-500 font-medium">Profile Image Preview</span>
+                </div>
+              )}
+            </div>
+
+            {/* Banner/Leaflet Image URL */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
+                <PhotoIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Leaflet / Flyer Banner URL
+              </label>
+              <input
+                type="url"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-gray-50/50"
+                value={profile.bannerImageUrl}
+                onChange={(e) => setProfile(prev => ({ ...prev, bannerImageUrl: e.target.value }))}
+                placeholder="e.g. https://imgur.com/your-flyer.jpg"
+              />
+              {profile.bannerImageUrl && (
+                <div className="mt-2 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                  <div className="w-full h-12 overflow-hidden rounded border border-gray-300">
+                    <img 
+                      src={profile.bannerImageUrl} 
+                      alt="Banner Preview" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => { e.target.src = 'https://placehold.co/400x100?text=No+Banner'; }} 
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500 font-medium mt-1 block">Leaflet Banner Preview</span>
+                </div>
+              )}
+            </div>
+
             {/* Biography */}
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center">
@@ -206,9 +291,32 @@ const TutorDashboard = () => {
 
             {/* Subject Checkboxes selector */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <BookOpenIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Subjects You Teach
+              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center justify-between">
+                <span className="flex items-center">
+                  <BookOpenIcon className="h-4 w-4 mr-1.5 text-gray-400" /> Subjects You Teach
+                </span>
+                <span className="text-xs text-gray-400 font-normal">Select from list or add a custom one below</span>
               </label>
+
+              {/* Add Custom Subject Inline Form */}
+              <div className="flex gap-2 mb-4 bg-gray-50/30 p-3 rounded-xl border border-gray-200">
+                <input
+                  type="text"
+                  placeholder="Type a new subject name (e.g. Advanced Calculus)"
+                  className="flex-1 rounded-lg border border-gray-300 px-3.5 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomSubject}
+                  disabled={addingSubject || !customSubject.trim()}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold flex items-center justify-center gap-1.5 disabled:opacity-50 text-xs"
+                >
+                  {addingSubject ? 'Adding...' : 'Add Subject'}
+                </button>
+              </div>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50/50 p-4 rounded-xl border border-gray-200">
                 {subjectsList.map(subject => {
                   const isChecked = selectedSubjectIds.includes(subject.id);

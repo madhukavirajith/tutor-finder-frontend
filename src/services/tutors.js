@@ -78,3 +78,12 @@ export const updateOwnProfile = (profileData) => {
 export const revealContact = (id) => {
   return api.post(`/tutors/${id}/contact`);
 };
+
+/**
+ * Create a new subject (Tutor only).
+ * @param {string} name Subject name.
+ * @returns {Promise} Axios response promise.
+ */
+export const createSubject = (name) => {
+  return api.post('/tutors/subjects', { name });
+};
