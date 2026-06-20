@@ -25,6 +25,7 @@ const TutorProfile = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isRevealing, setIsRevealing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchTutor = useCallback(async () => {
     try {
@@ -104,9 +105,22 @@ const TutorProfile = () => {
           className="bg-white rounded-3xl shadow-xl shadow-gray-150/40 border border-gray-100 overflow-hidden"
         >
           {/* Header Banner */}
-          <div className="h-44 relative overflow-hidden bg-gradient-to-r from-primary-900 via-primary-800 to-indigo-950">
+          <div className="h-44 relative overflow-hidden bg-gradient-to-r from-primary-900 via-primary-800 to-indigo-950 group">
             {tutor.bannerImageUrl ? (
-              <img src={tutor.bannerImageUrl} alt="Tutor Leaflet Banner" className="w-full h-full object-cover" />
+              <>
+                <img 
+                  src={tutor.bannerImageUrl} 
+                  alt="Tutor Leaflet Banner" 
+                  className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity" 
+                  onClick={() => setIsModalOpen(true)}
+                />
+                <button 
+                  onClick={() => setIsModalOpen(true)}
+                  className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/85 backdrop-blur-sm text-white text-xs px-3.5 py-1.5 rounded-lg border border-white/20 transition-all font-semibold opacity-0 group-hover:opacity-100 focus:opacity-100"
+                >
+                  View Full Leaflet
+                </button>
+              </>
             ) : (
               <>
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:2rem_2rem]" />
@@ -177,6 +191,33 @@ const TutorProfile = () => {
                     )}
                   </div>
                 </div>
+
+                {/* Leaflet / Flyer Full Display */}
+                {tutor.bannerImageUrl && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                      <span className="h-5 w-1 bg-primary-600 rounded-full" />
+                      Tutor Flyer / Leaflet
+                    </h2>
+                    <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100/80 flex justify-center">
+                      <div 
+                        className="max-w-md w-full rounded-2xl overflow-hidden border border-gray-200 shadow-md cursor-zoom-in group relative"
+                        onClick={() => setIsModalOpen(true)}
+                      >
+                        <img 
+                          src={tutor.bannerImageUrl} 
+                          alt="Tutor Flyer" 
+                          className="w-full h-auto object-contain hover:scale-[1.01] transition-transform duration-200" 
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                          <span className="bg-black/60 text-white text-xs font-semibold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            Click to Zoom
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Right Column: Sticky Contact details Widget */}
@@ -284,6 +325,46 @@ const TutorProfile = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Lightbox Modal for Leaflet */}
+      <AnimatePresence>
+        {isModalOpen && tutor.bannerImageUrl && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsModalOpen(false)}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 cursor-zoom-out"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-2xl w-full max-h-[90vh] bg-white rounded-3xl overflow-hidden shadow-2xl p-2 flex flex-col items-center"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-4 right-4 bg-gray-900/60 hover:bg-gray-900/80 backdrop-blur-md text-white rounded-full p-2.5 transition-all shadow-md z-10"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <div className="overflow-y-auto w-full flex justify-center bg-gray-50 rounded-2xl">
+                <img 
+                  src={tutor.bannerImageUrl} 
+                  alt="Full Tutor Leaflet" 
+                  className="max-w-full h-auto max-h-[85vh] object-contain rounded-xl"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
