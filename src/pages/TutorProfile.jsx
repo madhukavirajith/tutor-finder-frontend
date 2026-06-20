@@ -104,29 +104,10 @@ const TutorProfile = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-3xl shadow-xl shadow-gray-150/40 border border-gray-100 overflow-hidden"
         >
-          {/* Header Banner */}
-          <div className="h-44 relative overflow-hidden bg-gradient-to-r from-primary-900 via-primary-800 to-indigo-950 group">
-            {tutor.bannerImageUrl ? (
-              <>
-                <img 
-                  src={tutor.bannerImageUrl} 
-                  alt="Tutor Leaflet Banner" 
-                  className="w-full h-full object-cover cursor-zoom-in hover:opacity-90 transition-opacity" 
-                  onClick={() => setIsModalOpen(true)}
-                />
-                <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="absolute bottom-3 right-3 bg-black/60 hover:bg-black/85 backdrop-blur-sm text-white text-xs px-3.5 py-1.5 rounded-lg border border-white/20 transition-all font-semibold opacity-0 group-hover:opacity-100 focus:opacity-100"
-                >
-                  View Full Leaflet
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:2rem_2rem]" />
-                <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-primary-500/20 blur-[50px]" />
-              </>
-            )}
+          {/* Header Banner - Mesh Gradient */}
+          <div className="bg-gradient-to-r from-primary-900 via-primary-800 to-indigo-950 h-44 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:2rem_2rem]" />
+            <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-primary-500/20 blur-[50px]" />
           </div>
 
           <div className="px-6 sm:px-10 pb-10">
