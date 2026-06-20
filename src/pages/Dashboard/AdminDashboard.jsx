@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { 
@@ -8,15 +9,25 @@ import {
   CheckIcon, 
   XMarkIcon,
   AcademicCapIcon,
-  InboxIcon
+  InboxIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 import api from '../../services/api';
 import Loader from '../../components/common/Loader';
 
 const AdminDashboard = () => {
   const [pendingTutors, setPendingTutors] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actioningId, setActioningId] = useState(null);
+  
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeTab = tabParam === 'approvals' ? 'approvals' : 'overview';
+
+  const setActiveTab = (tabName) => {
+    setSearchParams({ tab: tabName });
+  };
 
   const fetchPendingTutors = async () => {
     try {
@@ -24,13 +35,25 @@ const AdminDashboard = () => {
       setPendingTutors(data);
     } catch (err) {
       toast.error('Failed to load pending tutor verifications');
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const { data } = await api.get('/admin/stats');
+      setStats(data);
+    } catch (err) {
+      console.error('Failed to load system stats');
     }
   };
 
   useEffect(() => {
-    fetchPendingTutors();
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchPendingTutors(), fetchStats()]);
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
   const handleApprove = async (id) => {
@@ -39,6 +62,7 @@ const AdminDashboard = () => {
       await api.post(`/admin/tutors/${id}/approve`);
       toast.success('Tutor profile successfully approved and published!');
       setPendingTutors(prev => prev.filter(t => t.id !== id));
+      fetchStats(); // Refresh stats numbers
     } catch (err) {
       toast.error('Failed to approve profile');
     } finally {
@@ -52,6 +76,7 @@ const AdminDashboard = () => {
       await api.post(`/admin/tutors/${id}/reject`);
       toast.success('Tutor profile rejected.');
       setPendingTutors(prev => prev.filter(t => t.id !== id));
+      fetchStats(); // Refresh stats numbers
     } catch (err) {
       toast.error('Failed to reject profile');
     } finally {
@@ -71,117 +96,218 @@ const AdminDashboard = () => {
           </h1>
           <p className="mt-2 text-sm text-gray-600">Review, verify, and approve tutor applications to access search listings.</p>
         </div>
-        <div className="mt-4 sm:mt-0 bg-primary-100 text-primary-800 text-xs px-3 py-1.5 rounded-full font-bold self-start">
-          {pendingTutors.length} Application{pendingTutors.length !== 1 ? 's' : ''} Pending
-        </div>
       </div>
 
-      {/* Main Moderation Interface */}
-      {pendingTutors.length === 0 ? (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-16 bg-white border rounded-2xl shadow-sm p-6"
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200 mb-8 space-x-8">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`pb-4 text-sm font-bold border-b-2 transition-all ${
+            activeTab === 'overview'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
         >
-          <InboxIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-800">Clear queue!</h3>
-          <p className="text-gray-500 mt-1">There are no pending tutor profiles waiting for approval at this time.</p>
-        </motion.div>
-      ) : (
-        <div className="bg-white shadow-md rounded-2xl overflow-hidden border border-gray-100">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
-              <thead className="bg-gray-50 text-gray-700 text-xs uppercase font-semibold">
-                <tr>
-                  <th scope="col" className="px-6 py-4">Tutor details</th>
-                  <th scope="col" className="px-6 py-4">Location</th>
-                  <th scope="col" className="px-6 py-4">Bio / Qualifications</th>
-                  <th scope="col" className="px-6 py-4">Subjects</th>
-                  <th scope="col" className="px-6 py-4 text-right">Moderation Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {pendingTutors.map((tutor) => (
-                  <motion.tr 
-                    layout
-                    key={tutor.id}
-                    className="hover:bg-gray-50/50 transition-colors align-top"
-                  >
-                    {/* Name & Contact */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-start">
-                        <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
-                          {tutor.fullName ? tutor.fullName.charAt(0).toUpperCase() : <AcademicCapIcon className="h-5 w-5" />}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-gray-900 text-base">{tutor.fullName || 'Unnamed Tutor'}</p>
-                          <p className="text-xs text-gray-500">{tutor.user?.email}</p>
-                          <p className="text-xs text-gray-500 mt-1">{tutor.phoneNumber || 'No phone'}</p>
-                        </div>
-                      </div>
-                    </td>
+          System Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('approvals')}
+          className={`pb-4 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeTab === 'approvals'
+              ? 'border-primary-600 text-primary-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <span>Pending Approvals</span>
+          {pendingTutors.length > 0 && (
+            <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-extrabold border border-amber-200">
+              {pendingTutors.length}
+            </span>
+          )}
+        </button>
+      </div>
 
-                    {/* Location */}
-                    <td className="px-6 py-5">
-                      <div className="flex items-center text-gray-700 mt-0.5">
-                        <MapPinIcon className="h-4 w-4 mr-1 text-gray-400" />
-                        <span>{tutor.location || 'Remote'}</span>
-                      </div>
-                    </td>
+      {/* Tab Content */}
+      {activeTab === 'overview' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-8"
+        >
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Stat Card 1: Users */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm flex items-center gap-4">
+              <div className="p-3.5 bg-primary-50 rounded-xl text-primary-600">
+                <UserIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Registered Users</p>
+                <h3 className="text-2xl font-extrabold text-gray-900 mt-1">{stats?.totalUsers || 0}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Tutors: <span className="font-semibold text-gray-700">{stats?.totalTutors || 0}</span> | Parents: <span className="font-semibold text-gray-700">{stats?.totalParents || 0}</span>
+                </p>
+              </div>
+            </div>
 
-                    {/* Bio Biography */}
-                    <td className="px-6 py-5 max-w-xs">
-                      <p className="text-gray-600 text-xs line-clamp-3 leading-relaxed">
-                        {tutor.bio || 'No description provided.'}
-                      </p>
-                    </td>
+            {/* Stat Card 2: Approvals */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm flex items-center gap-4">
+              <div className="p-3.5 bg-amber-50 rounded-xl text-amber-600">
+                <ShieldCheckIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Profile Approvals</p>
+                <h3 className="text-2xl font-extrabold text-gray-900 mt-1">{stats?.approvedTutors || 0} Vetted</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Awaiting Review: <span className="font-semibold text-amber-700">{stats?.pendingTutors || 0}</span>
+                </p>
+              </div>
+            </div>
 
-                    {/* Subjects */}
-                    <td className="px-6 py-5">
-                      <div className="flex flex-wrap gap-1">
-                        {tutor.subjects && tutor.subjects.length > 0 ? (
-                          tutor.subjects.map((sub) => (
-                            <span 
-                              key={sub.id} 
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-800 border border-primary-100"
-                            >
-                              <BookOpenIcon className="h-3 w-3 mr-0.5" /> {sub.name}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs text-gray-400">None selected</span>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Moderate Actions */}
-                    <td className="px-6 py-5 text-right font-medium">
-                      <div className="flex justify-end space-x-2">
-                        {/* Approve Button */}
-                        <button
-                          onClick={() => handleApprove(tutor.id)}
-                          disabled={actioningId !== null}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 transition-all"
-                        >
-                          <CheckIcon className="h-3.5 w-3.5 mr-1" /> Approve
-                        </button>
-
-                        {/* Reject Button */}
-                        <button
-                          onClick={() => handleReject(tutor.id)}
-                          disabled={actioningId !== null}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-50 transition-all"
-                        >
-                          <XMarkIcon className="h-3.5 w-3.5 mr-1" /> Reject
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+            {/* Stat Card 3: Subjects */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm flex items-center gap-4">
+              <div className="p-3.5 bg-indigo-50 rounded-xl text-indigo-600">
+                <BookOpenIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Subjects Configured</p>
+                <h3 className="text-2xl font-extrabold text-gray-900 mt-1">{stats?.totalSubjects || 0} Subjects</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Used for autocomplete searches</p>
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Quick Actions Panel */}
+          <div className="bg-white p-6 rounded-2xl border border-gray-150 shadow-sm">
+            <h3 className="font-bold text-lg text-gray-900 mb-4">Quick Shortcuts</h3>
+            <div className="flex flex-wrap gap-4">
+              <button 
+                onClick={() => setActiveTab('approvals')}
+                className="btn-primary text-sm py-2.5 px-5 flex items-center gap-2"
+              >
+                <ShieldCheckIcon className="h-5 w-5" />
+                Go to Moderation Queue ({pendingTutors.length})
+              </button>
+              <a 
+                href="/"
+                className="btn-secondary text-sm py-2.5 px-5 flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <InboxIcon className="h-5 w-5" />
+                Go to Public Homepage
+              </a>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {activeTab === 'approvals' && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {pendingTutors.length === 0 ? (
+            <div className="text-center py-16 bg-white border rounded-2xl shadow-sm p-6">
+              <InboxIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-bold text-gray-800">Clear queue!</h3>
+              <p className="text-gray-500 mt-1">There are no pending tutor profiles waiting for approval at this time.</p>
+            </div>
+          ) : (
+            <div className="bg-white shadow-md rounded-2xl overflow-hidden border border-gray-100">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 text-left text-sm">
+                  <thead className="bg-gray-50 text-gray-700 text-xs uppercase font-semibold">
+                    <tr>
+                      <th scope="col" className="px-6 py-4">Tutor details</th>
+                      <th scope="col" className="px-6 py-4">Location</th>
+                      <th scope="col" className="px-6 py-4">Bio / Qualifications</th>
+                      <th scope="col" className="px-6 py-4">Subjects</th>
+                      <th scope="col" className="px-6 py-4 text-right">Moderation Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 bg-white">
+                    {pendingTutors.map((tutor) => (
+                      <motion.tr 
+                        layout
+                        key={tutor.id}
+                        className="hover:bg-gray-50/50 transition-colors align-top"
+                      >
+                        {/* Name & Contact */}
+                        <td className="px-6 py-5">
+                          <div className="flex items-start">
+                            <div className="h-10 w-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
+                              {tutor.fullName ? tutor.fullName.charAt(0).toUpperCase() : <AcademicCapIcon className="h-5 w-5" />}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-900 text-base">{tutor.fullName || 'Unnamed Tutor'}</p>
+                              <p className="text-xs text-gray-500">{tutor.user?.email}</p>
+                              <p className="text-xs text-gray-500 mt-1">{tutor.phoneNumber || 'No phone'}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Location */}
+                        <td className="px-6 py-5">
+                          <div className="flex items-center text-gray-700 mt-0.5">
+                            <MapPinIcon className="h-4 w-4 mr-1 text-gray-400" />
+                            <span>{tutor.location || 'Remote'}</span>
+                          </div>
+                        </td>
+
+                        {/* Bio Biography */}
+                        <td className="px-6 py-5 max-w-xs">
+                          <p className="text-gray-650 text-xs line-clamp-3 leading-relaxed">
+                            {tutor.bio || 'No description provided.'}
+                          </p>
+                        </td>
+
+                        {/* Subjects */}
+                        <td className="px-6 py-5">
+                          <div className="flex flex-wrap gap-1">
+                            {tutor.subjects && tutor.subjects.length > 0 ? (
+                              tutor.subjects.map((sub) => (
+                                <span 
+                                  key={sub.id} 
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-800 border border-primary-100"
+                                >
+                                  <BookOpenIcon className="h-3 w-3 mr-0.5" /> {sub.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-450">None selected</span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Moderate Actions */}
+                        <td className="px-6 py-5 text-right font-medium">
+                          <div className="flex justify-end space-x-2">
+                            {/* Approve Button */}
+                            <button
+                              onClick={() => handleApprove(tutor.id)}
+                              disabled={actioningId !== null}
+                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 transition-all"
+                            >
+                              <CheckIcon className="h-3.5 w-3.5 mr-1" /> Approve
+                            </button>
+
+                            {/* Reject Button */}
+                            <button
+                              onClick={() => handleReject(tutor.id)}
+                              disabled={actioningId !== null}
+                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-lg shadow-sm text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 disabled:opacity-50 transition-all"
+                            >
+                              <XMarkIcon className="h-3.5 w-3.5 mr-1" /> Reject
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </motion.div>
       )}
     </div>
   );

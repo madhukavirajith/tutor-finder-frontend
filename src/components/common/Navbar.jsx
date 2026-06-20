@@ -15,7 +15,7 @@ const Navbar = () => {
 
   const getDashboardLink = () => {
     if (user?.role === 'TUTOR') return '/dashboard/tutor';
-    if (user?.role === 'ADMIN') return '/dashboard/admin';
+    if (user?.role === 'ADMIN') return '/dashboard/admin?tab=overview';
     if (user?.role === 'PARENT') return '/dashboard/parent';
     return '/';
   };
@@ -38,7 +38,12 @@ const Navbar = () => {
                   <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
                     <UserCircleIcon className="h-6 w-6 text-primary-600" />
                   </div>
-                  <span className="hidden md:block font-medium">{user.email}</span>
+                  <span className="hidden md:flex items-center gap-1.5 font-medium">
+                    {user.email}
+                    <span className="text-[10px] tracking-wider uppercase font-extrabold px-2 py-0.5 rounded-full bg-primary-100 text-primary-800 border border-primary-200">
+                      {user.role}
+                    </span>
+                  </span>
                   <ChevronDownIcon className="h-4 w-4" />
                 </Menu.Button>
                 <Transition
@@ -52,6 +57,12 @@ const Navbar = () => {
                 >
                   <Menu.Items className="absolute right-0 mt-2 w-48 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                     <div className="py-1">
+                      {/* User Info Header */}
+                      <div className="px-4 py-2 border-b border-gray-150 bg-gray-50/50">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Logged in as</p>
+                        <p className="text-xs font-bold text-gray-700 mt-0.5 capitalize">{user.role.toLowerCase()}</p>
+                      </div>
+
                       <Menu.Item>
                         {({ active }) => (
                           <Link
@@ -67,7 +78,7 @@ const Navbar = () => {
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              to="/dashboard/admin"
+                              to="/dashboard/admin?tab=approvals"
                               className={`${active ? 'bg-gray-100' : ''} flex items-center px-4 py-2 text-sm text-gray-700`}
                             >
                               <ShieldCheckIcon className="h-4 w-4 mr-2" />
